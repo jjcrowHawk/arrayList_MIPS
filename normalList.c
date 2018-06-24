@@ -11,6 +11,7 @@ int pos; //posicion del elemento a agregar o eliminar
 int length; //longitud del arreglo
 }l;
 
+//enumeración para poder usar booleanos en vez de numeros
 enum boolean { true, false };
 typedef enum boolean boolean;
 
@@ -143,12 +144,13 @@ void create(void)
         printf("Enter an element : ");
         scanf("%d", &element);
         l.list[l.length] = element;
+        printf("\nYou entered: %d \n",l.list[l.length]);
         l.length++;
 
         //validación para evitar agregar más elementos que el máximo permitido
         if (islistfull() != true)
         {
-        	printf("To insert another element press '1' : ");
+        	printf("To insert another element press '1' To stop press '0': ");
         	scanf("%d", &flag);
         }
         else
