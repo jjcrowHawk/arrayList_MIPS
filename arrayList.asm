@@ -67,6 +67,7 @@ CASE_5:		bne $t0,5,CASE_6	#if $t0 != 5 jump to case 6
 		la $a0,OP5
 		li $a1,4
 		jal print
+		jal display
 		j menu_loop
 		
 CASE_6:		bne $t0,6,DEFAULT	#if $t0 != 6 jump to DEFAULT
@@ -132,7 +133,10 @@ ENTER_ELEMENT:	.asciiz	"\nEnter an element: "
 CONTINUE_INS:	.asciiz	"\nTo insert another element press '1' To stop press '0': "
 YOU_ENTERED:	.asciiz	"\nYou entered: "
 LIST_FULL:	.asciiz	"\n\tList if Full!"
+ELEMENT:	.asciiz "\nElement "
+SPACE:		.asciiz " : "
 	.text
+	
 create:	sub $sp,$sp,4		#reserve 4 bytes on stack
 	sw $ra,($sp) 		#copy return address to reserved stack memory place
 	sub $sp,$sp,4		#reserve 4 bytes on stack
@@ -181,7 +185,44 @@ loopc:	la $a0,ENTER_ELEMENT	#set argument to print
         addi $sp,$sp,4             
 	jr $ra
 
+display:sub $sp,$sp,4		#reserve 4 bytes on stack
+	sw $ra,($sp) 		#copy return address to reserved stack memory place
+	sub $sp,$sp,4		#reserve 4 bytes on stack
+	sw $fp,($sp)		#copy frame pointer to reserved stack memory place
+	sub $fp,$sp,8		#reserve 8 bytes for int element-> 0($fp), int flag -> 4($fp)
+	move $sp,$fp		# $sp= $fp
+	
+	lw $t1, 88($s1)		# load array size
+	li $t2, 0		# variable position
 
+loopd:	la   $a0, ELEMENT       # load address of ELEMENT for syscall
+	li   $a1, 4           	# specify Print String service
+	jal print               # output string
+	
+	addi $t2, $t2, 1	# increase position
+	la $a0, 0($t2)		# load address of position number
+	li   $a1, 1          	# specify Print Integer service
+	jal print               # print array number
+	
+	la   $a0, SPACE      	# load address of spacer for syscall
+	li   $a1, 4         	# specify Print String service
+	jal print               # output string
+	
+	lw   $a0, 0($s1)	# load array for syscall
+	li   $a1, 1         	# specify Print Integer service
+	jal print               # print array number
+	
+	addi $s1 $s1, 4   	# increment address
+	addi $t1, $t1, -1     	# decrement loop counter
+	bgtz $t1, loopd        	# repeat if not finished 
+	
+	addi $sp,$fp,8		# restoring $sp
+	lw $fp,($sp)        	#   Pop stored $fp
+        addi $sp,$sp,4       	           
+        lw $ra,($sp)        	#   Pop stored $ra
+        addi $sp,$sp,4             
+	jr $ra
+	
 ### Function that prints on screen an int,float,char or string passed by args.
 ## args: $a0 -> value to print, 
 ##	 $a1 -> numbercode to specify the type of value
