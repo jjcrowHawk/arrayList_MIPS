@@ -21,6 +21,7 @@ void insert(int, int); //funcion para agregar un elemento en una posicion dada
 void delete(int); //funcion para eliminar un elemento en una posicion dada
 void find(int); //funcion para encontrar la posicion de un elemento dado
 void display(void); //funcion para presentar el arreglo
+void average(void); //funcion para encontrar el promedio del arreglo 
 boolean islistfull(void); //funcion para verificar si el arreglo está lleno
 boolean islistempty(void); //funcion para verificar si el arreglo está vacío
 
@@ -40,7 +41,8 @@ void main()
                 create();
                 break;
             case 2:
-                if (islistfull() != true){
+                if (islistfull() != true)
+                {
                     printf("\tEnter the New element : ");
                     scanf("%d", &element);
                     printf("\tEnter the Position : ");
@@ -49,7 +51,7 @@ void main()
                 }
                 else
                 {
-                    printf("\tList if Full. Cannot insert");     
+                    printf("\tList if Full. Cannot insert\n");     
                 }
                 break;
             case 3:
@@ -65,21 +67,52 @@ void main()
                 }
                 break;
             case 4:
-                printf("No. of elements in the list is %d", l.length);
+            	if (islistempty() != true)
+                {
+                	printf("No. of elements in the list is %d\n", l.length);
+                }
+                else
+                {
+                    printf("List is Empty.\n");
+                }
                 break;
             case 5:
-                printf("Enter the element to be searched : ");
-                scanf("%d", &element);
-                find(element);
+            	if (islistempty() != true)
+                {
+	                printf("Enter the element to be searched : ");
+	                scanf("%d", &element);
+	                find(element);
+                }
+                else
+                {
+                    printf("List is Empty.\n");
+                }
                 break;
             case 6:
-                display();
+            	if (islistempty() != true)
+                {
+                	display();
+                }
+                else
+                {
+                    printf("List is Empty.\n");
+                }
                 break;
             case 7:
+            	if (islistempty() != true)
+                {
+            		average();
+            	}
+            	else
+                {
+                    printf("List is Empty.\n");
+                }
+            	break;
+            case 8:
                 exit(0);
                 break;
             default:
-                printf("Invalid Choice");
+                printf("Invalid Choice\n");
                 
         }
     }
@@ -92,7 +125,7 @@ int menu()
     printf("\n\t\t********************************************\n");
     printf("\t\t******LIST Implementation Using Arrays******\n");
     printf("\t\t********************************************\n\n");
-    printf("\t1. Create\n\t2. Insert\n\t3. Delete\n\t4. Count\n\t5. Find\n\t6. Display\n\t7.Exit\n\n\tEnter your choice : ");
+    printf("\t1. Create\n\t2. Insert\n\t3. Delete\n\t4. Count\n\t5. Find\n\t6. Display\n\t7. Average\n\t8. Exit\n\n\tEnter your choice : ");
     scanf("%d", &ch);
     printf("\n\n");
     return ch;
@@ -120,7 +153,7 @@ void create(void)
         }
         else
         {
-        	printf("\n\tList if Full"); 
+        	printf("\n\tList if Full\n"); 
         	flag = 0;
         }
     }
@@ -206,6 +239,24 @@ void find(int element)
     {
         printf("Element not found.\n");
     }
+}
+
+//funcion para encontrar el promedio del arreglo
+void average(void)
+{
+	int i;
+	float avg;
+	int sum = 0;
+
+	//recorrer el arreglo para sumar los elementos
+	for (i=0; i<l.length; i++)
+	{
+		sum = sum + l.list[i];
+	}
+
+	//calcular el promedio
+	avg = (float) sum / (float) l.length;
+	printf ("The average is: %f\n", avg);
 }
 
 //funcion para verificar si el arreglo está lleno
