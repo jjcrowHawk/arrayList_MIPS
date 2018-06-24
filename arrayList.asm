@@ -1,5 +1,5 @@
 	.data
-.eqv	SIZE	20	#Size of arrayList
+.eqv	SIZE	3	#Size of arrayList
 .eqv	true	0	#Valores del enum boolean
 .eqv	false	1
 OP1:	.asciiz "\n||Create arrayList||\n"
@@ -10,6 +10,8 @@ OP5:	.asciiz "\n||Display elements||\n"
 OP6:	.asciiz "\nExiting from menu....\n"
 OP7:	.asciiz "\n||Create arrayList||\n"
 DEF:	.asciiz "\nInvalid Choice!\n"
+LST_EMP:.asciiz "List is Empty.\n"
+POS_DEL:.asciiz "\nEnter the position of element to be deleted : "
 
 #ch:		.word	0	#variable that stores the return value of menu() functions
 #element:	.word	0	#variable that stores the input value of user for new element
@@ -55,6 +57,19 @@ CASE_3:		bne $t0,3,CASE_4	#if $t0 != 3 jump to case 4
 		la $a0,OP3
 		li $a1,4
 		jal print
+		jal islistempty
+		beq $v0,true,elsecase3
+		la $a0,POS_DEL		#set argument to print
+		li $a1,4
+		jal print
+		li $a0,5
+		jal scan		# call scan function
+		move $a0,$v0		# $a0= scan()
+		jal delete
+		j menu_loop
+elsecase3:	la $a0,LST_EMP		#set argument to print
+		li $a1,4
+		jal print
 		j menu_loop
 		
 CASE_4:		bne $t0,4,CASE_5	#if $t0 != 4 jump to case 5
@@ -88,9 +103,10 @@ EXIT:		lw $fp,($sp)        	#   Pop stored $fp
 		li $v0,10	    	# Inserting code to exit
 		syscall
 
-### Function that prints menu and ask to user for an option to choose
+
+### Funcion que imprime el menu del programa y recepta la eleccion del usuario
 ##  args: none
-##  return: $v0 -> An integer that represents the user's choice.
+##  return: $v0 -> La opcion que escogio el usuario en un numero entero
 ###
 	.data
 DECORATOR:	.asciiz	"\n\t\t********************************************\n"
@@ -121,7 +137,7 @@ menu:	sub $sp,$sp,4		#reserve 4 bytes on stack
         addi $sp,$sp,4       	           
         lw $ra,($sp)        	#   Pop stored $ra
         addi $sp,$sp,4             
-	jr $ra			#return (end of function) // AQUI HAY QUE GUARDAR LA DIRECCION, YA QUE SE PIERDE el return Adrress AL USAR PRINT
+	jr $ra			#return (end of function)
 
 
 ### Funcion que inicializa la lista con los elementos especificados por el usuario
@@ -133,8 +149,6 @@ ENTER_ELEMENT:	.asciiz	"\nEnter an element: "
 CONTINUE_INS:	.asciiz	"\nTo insert another element press '1' To stop press '0': "
 YOU_ENTERED:	.asciiz	"\nYou entered: "
 LIST_FULL:	.asciiz	"\n\tList if Full!"
-ELEMENT:	.asciiz "\nElement "
-SPACE:		.asciiz " : "
 	.text
 	
 create:	sub $sp,$sp,4		#reserve 4 bytes on stack
@@ -143,7 +157,7 @@ create:	sub $sp,$sp,4		#reserve 4 bytes on stack
 	sw $fp,($sp)		#copy frame pointer to reserved stack memory place
 	sub $fp,$sp,8		#reserve 8 bytes for int element-> 0($fp), int flag -> 4($fp)
 	move $sp,$fp		# $sp= $fp
-	addi $t1,$t1,1		# $t1= 1;
+	li $t1,1		# $t1= 1;
 	sw $t1, 4($fp)		# flag= 1;
 	lw $t2, 4($fp)		# se carga en un registro temporal el valor de flag
 loopc:	la $a0,ENTER_ELEMENT	#set argument to print
@@ -169,13 +183,22 @@ loopc:	la $a0,ENTER_ELEMENT	#set argument to print
 	addi $t5,$t5,1
 	sw $t5, 88($s1)		# l.length++;
 	
-				#Aqui se colocara el if(islistfull() != true)
+	jal islistfull
+	beq $v0,true,elsecreate
 	la $a0,CONTINUE_INS	#set argument to print
 	li $a1,4
 	jal print	
 	li $a0,5
 	jal scan		# call scan function
 	sw $v0, 4($fp)		# flag= $v0 (retorno del scan)
+	lw $t5, 4($fp)		# $t5 = flag
+	beq $t5,1,loopc
+elsecreate:
+	la $a0,LIST_FULL	#set argument to print
+	li $a1,4
+	jal print
+	li $t1,0		# $t1= 0
+	sw $t1, 4($fp)		# flag= $t1 (retorno de islistfull)
 	lw $t5, 4($fp)		# $t5 = flag
 	beq $t5,1,loopc
 	addi $sp,$fp,8		# restoring $sp
@@ -185,6 +208,75 @@ loopc:	la $a0,ENTER_ELEMENT	#set argument to print
         addi $sp,$sp,4             
 	jr $ra
 
+
+### Funcion que elimina un elemento del arrayList en una posicion dada por el usuario
+##  args: $a0 ->  int pos
+## return: ninguno
+###
+	.data
+CANNOT_DELETE:	.asciiz	"\n\nCannot delete at zeroth position"
+ONLY:		.asciiz	"\n\nOnly "
+ONLY2:		.asciiz	" elements exists. Cannot delete at "
+ELM_DELETED:	.asciiz	"\nElement deleted!"
+	.text
+delete:	sub $sp,$sp,4		#reserve 4 bytes on stack
+	sw $ra,($sp) 		#copy return address to reserved stack memory place
+	move $t1,$a0		# $t1 = pos
+	subi $t3,$t1,1		# inicializamos i= pos-1 ya que la variable i solo se usara para el for. (no es necesario pasarlo a memoria)
+	bne $t1,0,chckpos	# if(pos==0)
+	la   $a0, CANNOT_DELETE # load address of spacer for syscall
+	li   $a1, 4         	# specify Print String service
+	jal print
+	j   exitdel
+	
+chckpos:lw  $t2, 88($s1)	# $t2= l.length
+	ble $t1,$t2,delpos	# if( pos > l.length)
+	la  $a0, ONLY 		# load address of spacer for syscall
+	li  $a1, 4         	# specify Print String service
+	jal print
+	move  $a0, $t2		# load array for syscall
+	li  $a1, 1         	# specify Print Integer service
+	jal print
+	la  $a0, ONLY2 		# load address of spacer for syscall
+	li  $a1, 4         	# specify Print String service
+	jal print
+	move  $a0, $t1		# load array for syscall
+	li  $a1, 1         	# specify Print Integer service
+	jal print
+	j   exitdel
+
+delpos: bge $t3,$t2,endford	#for loop(i<l.length)
+	move $t4,$s1		# $t4 = l.list
+	sll $t5,$t3,2		# $t5= i * 4
+	add $t6,$t4,$t5		# $t6= &(l.list[i])
+	addi $t5,$t3,1		# $t5= i + 1
+	sll $t5,$t5,2		# $t5= $t5 * 4
+	add $t7,$t4,$t5		# $t7= &(l.list[i+1])
+	lw  $t8,($t7)		# $t8= l.list[i+1]
+	sw  $t8,($t6)		# l.list[i] = l.list[i+1]
+	addi $t3,$t3,1		# i++
+	j delpos
+	
+endford:subi $t3,$t2,1		# $t3= l.length - 1;
+	sw $t3, 88($s1)		# l.lenght--;
+	la  $a0, ELM_DELETED 	# load address of spacer for syscall
+	li  $a1, 4         	# specify Print String service
+	jal print
+	
+exitdel:lw $ra,($sp)        	#   Pop stored $ra
+        addi $sp,$sp,4             
+	jr $ra
+		
+
+
+### Funcion que imprime todos los elementos del arrayList
+## args: ninguno
+## return: ninguno
+###
+	.data
+ELEMENT:	.asciiz "\nElement "
+SPACE:		.asciiz " : "
+	.text
 display:sub $sp,$sp,4		#reserve 4 bytes on stack
 	sw $ra,($sp) 		#copy return address to reserved stack memory place
 	sub $sp,$sp,4		#reserve 4 bytes on stack
@@ -223,7 +315,32 @@ loopd:	la   $a0, ELEMENT       # load address of ELEMENT for syscall
         lw $ra,($sp)        	#   Pop stored $ra
         addi $sp,$sp,4             
 	jr $ra
+
+
+### Funcion que verifica si el arrayList esta lleno
+##  args: ninguno
+##  return: $v0 -> valor booleano true(0) o false(1)
+###
+islistfull:	lw $t1, 88($s1)		# $t1 = l.length
+		bne $t1,SIZE, elsefull
+		li $v0,true		# $v0 = true
+		jr $ra
+elsefull:	li $v0,false		# $v0 = false
+		jr $ra
+
+
+### Funcion que verifica si el arrayList esta vacio
+##  args: ninguno
+##  return: $v0 -> valor booleano true(0) o false(1)
+###
+islistempty:	lw $t1, 88($s1)		# $t1 = l.length
+		bne $t1,0, else_empty
+		li $v0,true		# $v0 = true
+		jr $ra
+else_empty:	li $v0,false		# $v0 = false
+		jr $ra
 	
+															
 ### Function that prints on screen an int,float,char or string passed by args.
 ## args: $a0 -> value to print, 
 ##	 $a1 -> numbercode to specify the type of value
@@ -232,6 +349,7 @@ loopd:	la   $a0, ELEMENT       # load address of ELEMENT for syscall
 print:	move $v0,$a1		#Set value for print a String
 	syscall			#call system
 	jr $ra			#return (end of function)
+
 
 ### Function that scans numeric data from user's input and store it in a buffer
 ## args: $a0 -> numbercode of scanf

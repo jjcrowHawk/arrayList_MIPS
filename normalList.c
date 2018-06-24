@@ -206,19 +206,21 @@ void delete(int pos)
     if(pos == 0)
     {
         printf("\n\nCannot delete at zeroth position");
+        return;
     }
     //validación para evitar una posición inexistente
     if (pos > l.length)
     {
-        printf("\n\nOnly %d elements exit. Cannot delete %d", l.length, pos);
+        printf("\n\nOnly %d elements exists. Cannot delete %d", l.length, pos);
         return;
     }
     //eliminar elemento
     for (i=pos-1; i<l.length; i++)
-    {
-        l.list[i] = l.list[i+1];
+    {   
+        l.list[i]       = l.list[i+1];
     }
     l.length--;
+    printf("\nElement deleted!");
 }
 
 //funcion para encontrar la posicion de un elemento dado
