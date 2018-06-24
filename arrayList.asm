@@ -95,7 +95,7 @@ EXIT:		lw $fp,($sp)        	#   Pop stored $fp
 	.data
 DECORATOR:	.asciiz	"\n\t\t********************************************\n"
 TITLE_MENU:	.asciiz "\t\t******LIST Implementation Using Arrays******\n"
-BODY_MENU:	.asciiz	"\t1. Create\n\t2. Insert\n\t3. Delete\n\t4. Count\n\t5. Display\n\t6.Exit\n\n\tEnter your choice : "
+BODY_MENU:	.asciiz	"\t1. Create\n\t2. Insert\n\t3. Delete\n\t4. Count\n\t5. Display\n\t6. Exit\n\n\tEnter your choice : "
 	.text
 menu:	sub $sp,$sp,4		#reserve 4 bytes on stack
 	sw $ra,($sp) 		#copy return address to reserved stack memory place
@@ -194,6 +194,7 @@ display:sub $sp,$sp,4		#reserve 4 bytes on stack
 	
 	lw $t1, 88($s1)		# load array size
 	li $t2, 0		# variable position
+	move $t3, $s1		# move array
 
 loopd:	la   $a0, ELEMENT       # load address of ELEMENT for syscall
 	li   $a1, 4           	# specify Print String service
@@ -202,17 +203,17 @@ loopd:	la   $a0, ELEMENT       # load address of ELEMENT for syscall
 	addi $t2, $t2, 1	# increase position
 	la $a0, 0($t2)		# load address of position number
 	li   $a1, 1          	# specify Print Integer service
-	jal print               # print array number
+	jal print               # print position number
 	
 	la   $a0, SPACE      	# load address of spacer for syscall
 	li   $a1, 4         	# specify Print String service
 	jal print               # output string
 	
-	lw   $a0, 0($s1)	# load array for syscall
+	lw   $a0, 0($t3)	# load array for syscall
 	li   $a1, 1         	# specify Print Integer service
 	jal print               # print array number
 	
-	addi $s1 $s1, 4   	# increment address
+	addi $t3, $t3, 4   	# increment address
 	addi $t1, $t1, -1     	# decrement loop counter
 	bgtz $t1, loopd        	# repeat if not finished 
 	
