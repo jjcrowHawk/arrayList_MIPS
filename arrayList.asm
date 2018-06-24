@@ -7,8 +7,8 @@ OP2:	.asciiz "\n||Insert element on arrayList||\n"
 OP3:	.asciiz "\n||Delete an element||\n"
 OP4:	.asciiz "\n||Count elements||\n"
 OP5:	.asciiz "\n||Display elements||\n"
-OP6:	.asciiz "\nExiting from menu....\n"
-OP7:	.asciiz "\n||Create arrayList||\n"
+OP6:	.asciiz "\n||Average of arrayList||\n"
+OP7:	.asciiz "\n||Exiting from program...||\n"
 DEF:	.asciiz "\nInvalid Choice!\n"
 LST_EMP:.asciiz "List is Empty.\n"
 POS_DEL:.asciiz "\nEnter the position of element to be deleted : "
@@ -85,12 +85,25 @@ CASE_5:		bne $t0,5,CASE_6	#if $t0 != 5 jump to case 6
 		jal display
 		j menu_loop
 		
-CASE_6:		bne $t0,6,DEFAULT	#if $t0 != 6 jump to DEFAULT
+CASE_6:		bne $t0,6,CASE_7	#if $t0 != 6 jump to case 7
 		la $a0,OP6
 		li $a1,4
 		jal print
+		jal islistempty
+		beq $v0,true,elsecase6
+		jal average
+		j menu_loop
+elsecase6:	la $a0,LST_EMP		#set argument to print
+		li $a1,4
+		jal print
+		j menu_loop
+
+CASE_7:		bne $t0,7,DEFAULT	#if $t0 != 7 jumo to DEFAULT
+		la $a0,OP7
+		li $a1,4
+		jal print
 		j EXIT
-		
+			
 DEFAULT:	la $a0,DEF		#default case
 		li $a1,4
 		jal print
@@ -111,7 +124,7 @@ EXIT:		lw $fp,($sp)        	#   Pop stored $fp
 	.data
 DECORATOR:	.asciiz	"\n\t\t********************************************\n"
 TITLE_MENU:	.asciiz "\t\t******LIST Implementation Using Arrays******\n"
-BODY_MENU:	.asciiz	"\t1. Create\n\t2. Insert\n\t3. Delete\n\t4. Count\n\t5. Display\n\t6. Exit\n\n\tEnter your choice : "
+BODY_MENU:	.asciiz	"\t1. Create\n\t2. Insert\n\t3. Delete\n\t4. Count\n\t5. Display\n\t6. Average\n\t7. Exit\n\n\tEnter your choice : "
 	.text
 menu:	sub $sp,$sp,4		#reserve 4 bytes on stack
 	sw $ra,($sp) 		#copy return address to reserved stack memory place
@@ -193,6 +206,7 @@ loopc:	la $a0,ENTER_ELEMENT	#set argument to print
 	sw $v0, 4($fp)		# flag= $v0 (retorno del scan)
 	lw $t5, 4($fp)		# $t5 = flag
 	beq $t5,1,loopc
+	j exitcreate
 elsecreate:
 	la $a0,LIST_FULL	#set argument to print
 	li $a1,4
@@ -201,6 +215,7 @@ elsecreate:
 	sw $t1, 4($fp)		# flag= $t1 (retorno de islistfull)
 	lw $t5, 4($fp)		# $t5 = flag
 	beq $t5,1,loopc
+exitcreate:
 	addi $sp,$fp,8		# restoring $sp
 	lw $fp,($sp)        	#   Pop stored $fp
         addi $sp,$sp,4       	           
@@ -210,7 +225,7 @@ elsecreate:
 
 
 ### Funcion que elimina un elemento del arrayList en una posicion dada por el usuario
-##  args: $a0 ->  int pos
+##  args: $a0 -> int pos
 ## return: ninguno
 ###
 	.data
@@ -315,7 +330,62 @@ loopd:	la   $a0, ELEMENT       # load address of ELEMENT for syscall
         lw $ra,($sp)        	#   Pop stored $ra
         addi $sp,$sp,4             
 	jr $ra
-
+	
+	
+### Funcion que calcula e imprime el valor de la suma y el promedio del arrayList
+##  args: ninguno
+##  return: ninguno
+###
+	.data
+THESUM:	.asciiz "\nThe sum is: "
+THEAVG:	.asciiz "\nThe average is: "
+	.text
+average:sub $sp,$sp,4		#reserve 4 bytes on stack
+	sw $ra,($sp) 		#copy return address to reserved stack memory place
+	sub $sp,$sp,4		#reserve 4 bytes on stack
+	sw $fp,($sp)		#copy frame pointer to reserved stack memory place
+	sub $fp,$sp,8		#reserve 8 bytes for float avg-> 0($fp), int sum -> 4($fp) (int i no va a ser alojado en memoria para optimizar)
+	move $sp,$fp		# $sp= $fp
+	sw $zero, 4($sp)	# sum= 0
+	li $t1,0		# $t1 -> i
+	lw $t2,88($s1)		# $t2 = l.length
+	
+forsum:	bge $t1,$t2,endforsum   # for(i<l.length)
+	lw $t3,4($fp)		# $t3= sum
+	move $t4,$s1		# $t4 -> l.list
+	sll $t5,$t1,2		# $t5= i * 4
+	add $t4,$t4,$t5		# $t4 -> l.list[i]
+	lw $t6,($t4)		# $t6= l.list[i]
+	add $t3,$t3,$t6		# sum= sum + l.list[i]
+	sw $t3,4($sp)		# sum= $t3
+	addi $t1,$t1,1		# i++
+	j forsum
+endforsum:
+	la $a0, THESUM      	# load address of spacer for syscall
+	li $a1, 4         	# specify Print String service
+	jal print
+	lw $t1,4($sp)		# $t1 = sum
+	move $a0, $t1		# load int for syscall
+	li $a1, 1         	# specify Print Integer service
+	jal print
+	lw $t2, 88($s1)		# $t2 = l.length (por si acaso volvemos a cargar :v)
+	mtc1 $t1,$f1		# $f1 =	 sum <==> (float)sum
+	mtc1 $t2,$f2		# $f2 = l.length <==> (float)l.length
+	div.s $f3,$f1,$f2	# sum/ length
+	swc1 $f3,0($fp)		# avg= $f3
+	la $a0, THEAVG      	# load address of spacer for syscall
+	li $a1, 4         	# specify Print String service
+	jal print
+	lw $t3, 0($fp)		# $t3= avg
+	mtc1 $t3,$f12		# $f12= $t3
+	li $v0,2		# code for print float
+	syscall
+	addi $sp,$fp,8		# restoring $sp
+	lw $fp,($sp)        	#   Pop stored $fp
+        addi $sp,$sp,4       	           
+        lw $ra,($sp)        	#   Pop stored $ra
+        addi $sp,$sp,4             
+	jr $ra
 
 ### Funcion que verifica si el arrayList esta lleno
 ##  args: ninguno
