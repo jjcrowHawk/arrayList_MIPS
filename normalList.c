@@ -181,19 +181,21 @@ void insert(int element, int pos)
         return;
     }
     //validación para evitar una posición inexistente o que no sea siguiente a la última
-    if (pos-1 > l.length)
+    else if (pos-1 > l.length)
     {
         printf("\n\nOnly %d elements exit. Cannot insert at %d postion", l.length, pos);
+        return;
     }
     //agregar elemento
     else
     {
         for (i=l.length; i>=pos-1; i--)
-        {
+        {   
             l.list[i+1] = l.list[i];
         }
         l.list[pos-1] = element;
         l.length++;
+        printf("\nElement inserted!!\n");
     }
 }
 
@@ -217,7 +219,7 @@ void delete(int pos)
     //eliminar elemento
     for (i=pos-1; i<l.length; i++)
     {   
-        l.list[i]       = l.list[i+1];
+        l.list[i]= l.list[i+1];
     }
     l.length--;
     printf("\nElement deleted!");

@@ -12,7 +12,10 @@ OP7:	.asciiz "\n||Exiting from program...||\n"
 DEF:	.asciiz "\nInvalid Choice!\n"
 LST_EMP:.asciiz "List is Empty.\n"
 POS_DEL:.asciiz "\nEnter the position of element to be deleted : "
-
+LST_FLL:.asciiz "\tList if Full. Cannot insert\n"
+ELM_INS:.asciiz "\tEnter the New element : "
+POS_INS:.asciiz "\tEnter the Position : "
+CNT_ELM:.asciiz "\nNo. of elements in the arrayList is: "
 #ch:		.word	0	#variable that stores the return value of menu() functions
 #element:	.word	0	#variable that stores the input value of user for new element
 #pos:		.word	0	#varaible that stores the input value of user that define the position of the element to delete
@@ -51,8 +54,28 @@ CASE_2:		bne $t0,2,CASE_3	#if $t0 != 2 jump to case 3
 		la $a0,OP2
 		li $a1,4
 		jal print
+		jal islistfull
+		beq $v0,true,elsecase2
+		la $a0,ELM_INS		#set argument to print
+		li $a1,4
+		jal print
+		li $a0,5
+		jal scan		# call scan function
+		move $t1,$v0		# $t1= scan()
+		la $a0,POS_INS		#set argument to print
+		li $a1,4
+		jal print
+		li $a0,5
+		jal scan		# call scan function
+		move $t2,$v0		# $a0= scan()
+		move $a0,$t1		# $a0= element
+		move $a1,$t2		# $a1= pos
+		jal insert
 		j menu_loop
-		
+elsecase2:	la $a0,LST_FLL		#set argument to print
+		li $a1,4
+		jal print
+		j menu_loop
 CASE_3:		bne $t0,3,CASE_4	#if $t0 != 3 jump to case 4
 		la $a0,OP3
 		li $a1,4
@@ -76,13 +99,32 @@ CASE_4:		bne $t0,4,CASE_5	#if $t0 != 4 jump to case 5
 		la $a0,OP4
 		li $a1,4
 		jal print
+		jal islistempty
+		beq $v0,true,elsecase4
+		la $a0,CNT_ELM		#set argument to print
+		li $a1,4
+		jal print
+		lw,$t1,88($s1)		# $t1= l.length
+		move  $a0, $t1		# load int for syscall
+		li  $a1, 1         	# specify Print Integer service
+		jal print
 		j menu_loop
-		
+elsecase4:	la $a0,LST_EMP		#set argument to print
+		li $a1,4
+		jal print
+		j menu_loop
+				
 CASE_5:		bne $t0,5,CASE_6	#if $t0 != 5 jump to case 6
 		la $a0,OP5
 		li $a1,4
 		jal print
+		jal islistempty
+		beq $v0,true,elsecase5
 		jal display
+		j menu_loop
+elsecase5:	la $a0,LST_EMP		#set argument to print
+		li $a1,4
+		jal print
 		j menu_loop
 		
 CASE_6:		bne $t0,6,CASE_7	#if $t0 != 6 jump to case 7
@@ -249,13 +291,13 @@ chckpos:lw  $t2, 88($s1)	# $t2= l.length
 	la  $a0, ONLY 		# load address of spacer for syscall
 	li  $a1, 4         	# specify Print String service
 	jal print
-	move  $a0, $t2		# load array for syscall
+	move  $a0, $t2		# load int for syscall
 	li  $a1, 1         	# specify Print Integer service
 	jal print
 	la  $a0, ONLY2 		# load address of spacer for syscall
 	li  $a1, 4         	# specify Print String service
 	jal print
-	move  $a0, $t1		# load array for syscall
+	move  $a0, $t1		# load int for syscall
 	li  $a1, 1         	# specify Print Integer service
 	jal print
 	j   exitdel
@@ -281,8 +323,70 @@ endford:subi $t3,$t2,1		# $t3= l.length - 1;
 exitdel:lw $ra,($sp)        	#   Pop stored $ra
         addi $sp,$sp,4             
 	jr $ra
-		
+	
+	
+### Funcion que inserta elementos en la posicion especificada por el usuario
+## args: $a0-> int element, $a1-> int pos
+## return: ninguno
+###
+	.data
+CANNOT_INSERT:	.asciiz	"\n\nCannot insert at zeroth position"
+ONLY_INSERT:	.asciiz	"\n\nOnly "
+ONLY_INSERT2:	.asciiz	" elements exists. Cannot insert at "
+ELM_INSERTED:	.asciiz	"\nElement inserted!!\n"
+	.text
+insert:	sub $sp,$sp,4		#reserve 4 bytes on stack
+	sw $ra,($sp) 		#copy return address to reserved stack memory place
+	move $t1,$a0		# $t1 = element
+	move $t2,$a1		# $t2 = pos
+	lw $t3, 88($s1)		# $t3 = l.length
+	move $t4,$t3		# inicializamos i= l.length ya que la variable i solo se usara para el for. (no es necesario pasarlo a memoria)
+	bne $t2,0,chcklen	# if(pos==0)
+	la   $a0, CANNOT_INSERT # load address of spacer for syscall
+	li   $a1, 4         	# specify Print String service
+	jal print
+	j exitins
+chcklen:subi $t5,$t2,1		# $t5 = pos - 1
+	ble $t5,$t3,loopins	# if(pos-1 > l.length)
+	la  $a0, ONLY_INSERT 	# load address of spacer for syscall
+	li  $a1, 4         	# specify Print String service
+	jal print
+	move  $a0, $t3		# load int for syscall
+	li  $a1,1         	# specify Print Integer service
+	jal print
+	la  $a0, ONLY_INSERT2 	# load address of spacer for syscall
+	li  $a1, 4         	# specify Print String service
+	jal print
+	move  $a0, $t2		# load int for syscall
+	li  $a1, 1         	# specify Print Integer service
+	jal print
+	j   exitins
+loopins:blt $t4,$t5,endloopins #for(i>=pos-1)
+	move $t6,$s1		# $t6 -> l.list
+	sll $t7,$t4,2		# $t7= i * 4
+	add $t8,$t6,$t7		# $t8 -> l.list[i]
+	addi $t7,$t4,1		# $t7= i + 1
+	sll $t7,$t7,2		# $t7= $t7 * 4
+	add $t9,$t6,$t7		# $t9 -> l.list[i+1]
+	lw $t2,($t8)		# $t2= l.list[i]
+	sw $t2,($t9)		# l.list[i+1] = l.list[i]
+	subi $t4,$t4,1		# i--
+	j loopins
 
+endloopins:
+	move $t6,$s1		# $t6 -> l.list
+	sll $t7,$t5,2		# $t7= (pos - 1) * 2
+	add $t8,$t6,$t7		# $t8 -> l.list[pos-1]
+	sw $t1,($t8)		# l.list[pos-1] = element
+	addi $t3,$t3,1		# $t3+= 1
+	sw $t3,88($s1)		# l.length++
+	la  $a0, ELM_INSERTED 	# load address of spacer for syscall
+	li  $a1, 4         	# specify Print String service
+	jal print
+	
+exitins:lw $ra,($sp)        	#   Pop stored $ra
+        addi $sp,$sp,4             
+	jr $ra
 
 ### Funcion que imprime todos los elementos del arrayList
 ## args: ninguno
