@@ -20,7 +20,6 @@ int menu(void); //funcion para ver el menu del programa
 void create(void); //funcion para crear el arreglo
 void insert(int, int); //funcion para agregar un elemento en una posicion dada
 void delete(int); //funcion para eliminar un elemento en una posicion dada
-void find(int); //funcion para encontrar la posicion de un elemento dado
 void display(void); //funcion para presentar el arreglo
 void average(void); //funcion para encontrar el promedio del arreglo 
 boolean islistfull(void); //funcion para verificar si el arreglo está lleno
@@ -80,9 +79,7 @@ void main()
             case 5:
             	if (islistempty() != true)
                 {
-	                printf("Enter the element to be searched : ");
-	                scanf("%d", &element);
-	                find(element);
+                	display();
                 }
                 else
                 {
@@ -92,16 +89,6 @@ void main()
             case 6:
             	if (islistempty() != true)
                 {
-                	display();
-                }
-                else
-                {
-                    printf("List is Empty.\n");
-                }
-                break;
-            case 7:
-            	if (islistempty() != true)
-                {
             		average();
             	}
             	else
@@ -109,7 +96,7 @@ void main()
                     printf("List is Empty.\n");
                 }
             	break;
-            case 8:
+            case 7:
                 exit(0);
                 break;
             default:
@@ -126,7 +113,7 @@ int menu()
     printf("\n\t\t********************************************\n");
     printf("\t\t******LIST Implementation Using Arrays******\n");
     printf("\t\t********************************************\n\n");
-    printf("\t1. Create\n\t2. Insert\n\t3. Delete\n\t4. Count\n\t5. Find\n\t6. Display\n\t7. Average\n\t8. Exit\n\n\tEnter your choice : ");
+    printf("\t1. Create\n\t2. Insert\n\t3. Delete\n\t4. Count\n\t5. Display\n\t6. Average\n\t7. Exit\n\n\tEnter your choice : ");
     scanf("%d", &ch);
     printf("\n\n");
     return ch;
@@ -223,28 +210,6 @@ void delete(int pos)
     }
     l.length--;
     printf("\nElement deleted!");
-}
-
-//funcion para encontrar la posicion de un elemento dado
-void find(int element)
-{
-    int i;
-    int flag = 1; //bandera para indicar si se encontró el elemento o no
-
-    //recorrer el arreglo hasta encontrar el elemento
-    for (i=0; i<l.length; i++)
-    {
-        if(l.list[i] == element)
-        {
-            printf ("%d exists at %d position",element, i+1);
-            flag = 0;
-            break;
-        }
-    }
-    if(flag == 1)
-    {
-        printf("Element not found.\n");
-    }
 }
 
 //funcion para encontrar el promedio del arreglo
